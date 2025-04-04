@@ -15,7 +15,7 @@ class OptionPricer:
         sigma: Volatility
         """
         return (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    
+
     def _d2(self, S: float, K: float, T: float, r: float, sigma: float):
         """
         Calculate d2 parameter for Black-Scholes
@@ -97,6 +97,42 @@ class OptionPricer:
         p_vanilla_b_reflect = self.vanilla_put((B**2) / S, B, T, r, sigma)
         p_digital_b_reflect = self.digital_put((B**2) / S, B, T, r, sigma)
 
-        # Final formula
+        # Final formula - note the sign change in the last term
         return (p_vanilla_k - p_vanilla_b - (K - B) * p_digital_b
-                - reflection_factor * (p_vanilla_k_reflect - p_vanilla_b_reflect + (K - B) * p_digital_b_reflect))
+                - reflection_factor * (p_vanilla_k_reflect - p_vanilla_b_reflect - (K - B) * p_digital_b_reflect))
+
+    def american_digital_put(self, S: float, E: float, T: float, r: float, sigma: float, D: float = 0):
+        """
+        Calculate American digital put option price with immediate payout.
+
+        Parameters:
+        S: Current stock price
+        E: Strike price
+        T: Time to maturity (in years)
+        r: Risk-free interest rate
+        sigma: Volatility
+        D: Dividend yield (default is 0)
+        """
+        if S <= E:
+            return 1  # Option pays out immediately if S <= E
+
+        # Calculate parameters
+        k = r / (0.5 * sigma**2)
+        k_prime = (r - D) / (0.5 * sigma**2)
+        alpha = 0.5 * (1 - k_prime)
+        beta = -(0.25 * (1 - k_prime)**2 + k)
+
+        # Calculate lambda values (roots of the quadratic)
+        lambda_plus = alpha + np.sqrt(-beta)
+        lambda_minus = alpha - np.sqrt(-beta)
+
+        # Calculate d+ and d-
+        sqrt_time = np.sqrt(T)
+        d_plus = (np.log(S/E) + sigma**2 * np.sqrt(-beta) * T) / (sigma * sqrt_time)
+        d_minus = (np.log(S/E) - sigma**2 * np.sqrt(-beta) * T) / (sigma * sqrt_time)
+
+        # Compute final formula
+        term1 = (S/E)**lambda_plus * norm.cdf(-d_plus)
+        term2 = (S/E)**lambda_minus * norm.cdf(-d_minus)
+
+        return term1 + term2
