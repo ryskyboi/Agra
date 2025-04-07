@@ -30,30 +30,29 @@ class MonteCarloPricer:
             # Get previous prices
             prev_prices = result[:, :, i-1]
 
-            # Calculate drift component: μΔtS_t
-            drift_component = drifts_array.reshape(-1, 1) * dt * prev_prices
+            # # Calculate drift component: μΔtS_t
+            # drift_component = drifts_array.reshape(-1, 1) * dt * prev_prices
 
-            # Calculate volatility component: σ√ΔtS_tY_i
-            volatility_component = (np.sqrt(variances_array * dt).reshape(-1, 1) *
-                                   prev_prices * random_values[:, :, i-1])
+            # # Calculate volatility component: σ√ΔtS_tY_i
+            # volatility_component = (np.sqrt(variances_array * dt).reshape(-1, 1) *
+            #                        prev_prices * random_values[:, :, i-1])
 
             # New price = old price + drift + random shock
-            result[:, :, i] = prev_prices + drift_component + volatility_component
+            # result[:, :, i] = prev_prices + drift_component + volatility_component
 
+            # This uses GMB instead
+            result[:, :, i] = prev_prices * np.exp((drifts_array.reshape(-1, 1) - 0.5 * variances_array.reshape(-1, 1)) * dt +
+                                     np.sqrt(variances_array.reshape(-1, 1) * dt) * random_values[:, :, i-1])
         return result
-    
+
     def evaluate(self, payoff_function: Callable[[np.ndarray], np.ndarray], initial_prices: list[float], drifts: list[float],
                     variances: list[float], num_points: int, time: float, scenarios: int = 1000):
         ##TODO: Actually this payoff function needs to also take the state of all values in the array at that time
         dt = time/(num_points - 1)
         walks = self.multi_dimensional_random_walk(initial_prices, drifts, variances, num_points, dt, scenarios)
-        sample_means, sample_variances = np.zeros(len(initial_prices)), np.zeros(len(initial_prices))
-        sim = np.zeros((len(initial_prices), scenarios, num_points))
-        for i in range(len(initial_prices)):
-            print(f"Simulating scenarios for asset: {i}")
-            for j in tqdm(range(scenarios)):
-                sim[i,j,:] = payoff_function(walks[i,j,:])
-            sample_means[i] = np.mean(sim[i, :, -1])
-            sample_variances[i] = np.var(sim[i, :, -1])
-        return sample_means, sample_variances, sim, walks
+        sim = np.empty((scenarios, num_points))
+        for j in tqdm(range(scenarios)):
+            ## Rows are assets, times are columns
+            sim[j,:] = payoff_function(walks[:,j,:])
+        return np.mean(sim[:,-1]), np.var(sim[:,-1]), sim, walks
 
