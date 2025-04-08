@@ -38,7 +38,7 @@ class MonteCarloPricer:
     def evaluate(self, payoff_function: Callable[[np.ndarray], np.ndarray], initial_prices: list[float], drifts: list[float],
                     volatilitys: list[float], num_points: int, time: float, risk_free_rate: float, scenarios: int = 1000):
         if np.all(np.isnan(drifts)):
-            drifts = np.full(len(drifts), risk_free_rate)
+            drifts = list(np.full(len(drifts), risk_free_rate))
         dt = time/(num_points - 1)
         walks = self.multi_dimensional_random_walk(initial_prices, drifts, volatilitys, num_points, dt, scenarios)
         sim = np.empty((scenarios, num_points))
