@@ -36,7 +36,10 @@ def rate_to_apr(rate: float, time: float) -> float:
     return (1+rate) ** (1/time) - 1
 
 def example_loan_cost(eth_price: float, point_of_indifference: float, liquidation_point: float, loan_time: float, risk_free_rate: float, vol: float, loan_size: float, eth_supplied) -> float:
-    down_and_out_put = pricer.down_and_out_put(eth_price, point_of_indifference, liquidation_point, loan_time, risk_free_rate, vol)
+    if liquidation_point > point_of_indifference:
+        down_and_out_put = 0 ## If liquidation point is above the point of indifference, then the down and out put is worthless
+    else:
+        down_and_out_put = pricer.down_and_out_put(eth_price, point_of_indifference, liquidation_point, loan_time, risk_free_rate, vol)
     american_digital_put = pricer.american_digital_put(eth_price, liquidation_point, loan_time, risk_free_rate, vol)
     if down_and_out_put > pricer.vanilla_put(eth_price, point_of_indifference, loan_time, risk_free_rate, vol):
         raise ValueError("Down and out put is worth more than vanilla put")
