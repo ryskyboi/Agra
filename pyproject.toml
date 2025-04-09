@@ -13,6 +13,7 @@ scipy = "^1.15.2"
 scipy-stubs = "^1.15.2.1"
 tqdm = "^4.67.1"
 types-tqdm = "^4.67.0.20250404"
+pandas = "^2.2.3"
 
 
 [tool.poetry.group.dev.dependencies]
