@@ -30,7 +30,7 @@ def account_value(supplied_price: float, supplied_amount: float, borrowed_price:
 def rate_to_apr(rate: float, time: float) -> float:
     return (1+rate) ** (1/time) - 1
 
-def payoff_aave(eth_prices: np.ndarray) -> float:
+def payoff_aave(eth_prices: np.ndarray) -> np.ndarray:
     ## This will just be a 1d array for a list of prices
     results = np.full(len(eth_prices[0]), np.nan)
     for i, price in enumerate(eth_prices[0]):
@@ -47,6 +47,7 @@ mu, sigma, sim, walk = monte.evaluate(
     [eth_price],
     [0],
     [vol],
+    np.array([[1]]),
     1000,
     loan_time,
     risk_free_rate,
